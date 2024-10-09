@@ -39,7 +39,6 @@ a) show the suppliers who delivered the largest number of products to us
 b) check the distribution of suppliers by region (how many in each region)
 c) check which region the suppliers who provide the most expensive and cheapest product come from
 
-Translated with DeepL.com (free version)
 # 2 Project
 ## Crypto copy trading system (SQL)
 2.In this project I made an analysis of purchases and sales of cryptocurrency wallets (on the solana network). The database was created by my programmer friend based on the real public database of the solana network. My task was to find suitable wallets that we could use for copy-trading. To do this, I had to create a query , which would filter the data appropriately, so as to reject portfolios used by bots (they make up the majority of the market), portfolios of inactive users (we only wanted active users from that month), portfolios with no profit, portfolios with no risky plays (for example, for most of their balance), etc. My main goal was to filter out portfolios of "day traders" recording recurring profits, operating on short trades (couple hours, not long trades for couple days).
