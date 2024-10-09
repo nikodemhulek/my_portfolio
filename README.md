@@ -34,6 +34,7 @@ SELECT
     swod.total_orders_without_discount AS orders_without_discount,
     swd.avg_discount AS average_discount
 FROM SalesWithDiscount swd, SalesWithoutDiscount swod
+```
 
 2. Does the region have an impact on revenue?
 ```sql
@@ -50,6 +51,7 @@ left join territories t on et.territory_id = t.territory_id
 left join region r ON t.region_id = r.region_id
 GROUP by r.region_description
 ORDER by total_revenue desc
+```
 
 3. Is seasonality in revenue if present the same for each region?
 ```sql
@@ -67,6 +69,7 @@ left JOIN territories t ON et.territory_id = t.territory_id
 left JOIN region r ON t.region_id = r.region_id
 GROUP BY r.region_description, date_part('month', o.order_date)
 ORDER BY r.region_description, month
+```
 
 4. Will a reduction in staff not affect the number of customers/orders served and ultimately sales?
 ```sql
@@ -98,6 +101,7 @@ select
 from  employees e
 left join wskazniki w on e.employee_id = w.employee_id
 order by wartos_sprzedazy_na_zamowienie desc
+```
 
 Conduct a detailed analysis of the Northwind database based on the following points:
 1. Give the number of customers in the database. 
