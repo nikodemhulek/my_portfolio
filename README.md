@@ -18,26 +18,26 @@ Conduct a detailed analysis of the Northwind database based on the following poi
 - check whether the TOP5 customers also generated the highest number of orders
 - check if there was seasonality in sales
 2. Analyze categories and products carefully
-a) show the products with the highest sales (TOP 10)
-b) show what % share each product had in the portfolios of TOP 5 customers												
-c) check whether there was seasonality in product sales -- if so, which products and when sales were highest and when lowest
-d) show statistics of discounts on individual products
-e) check whether the products with the highest income were also the most sold products
-f) check the distribution of product sales by country
+- show the products with the highest sales (TOP 10)
+- show what % share each product had in the portfolios of TOP 5 customers												
+- check whether there was seasonality in product sales -- if so, which products and when sales were highest and when lowest
+- show statistics of discounts on individual products
+- check whether the products with the highest income were also the most sold products
+- check the distribution of product sales by country
 3. Analyze employee statistics in detail
-a) show the size of the customer portfolio for each employee (revenue generated, number of orders, quantity sold)
-b) check the share of products in each employee's sales. Check whether employees have engaged more strongly based on their performance in selling specific products		
-c) check which carriers each employee worked with most often
-d) come up with and calculate two KPIs that will give a good picture of employee performance
-e) outline which manager has the best team in terms of revenue and volume of specific products sold
+- show the size of the customer portfolio for each employee (revenue generated, number of orders, quantity sold)
+- check the share of products in each employee's sales. Check whether employees have engaged more strongly based on their performance in selling specific products		
+- check which carriers each employee worked with most often
+- come up with and calculate two KPIs that will give a good picture of employee performance
+- outline which manager has the best team in terms of revenue and volume of specific products sold
 4. Analyze the carriers in detail
-a) which carrier handled the most orders
-b) which carrier transported the highest number of products
-c) total freight per carrier
+- which carrier handled the most orders
+- which carrier transported the highest number of products
+- total freight per carrier
 5. Analyze the suppliers
-a) show the suppliers who delivered the largest number of products to us
-b) check the distribution of suppliers by region (how many in each region)
-c) check which region the suppliers who provide the most expensive and cheapest product come from
+- show the suppliers who delivered the largest number of products to us
+- check the distribution of suppliers by region (how many in each region)
+- check which region the suppliers who provide the most expensive and cheapest product come from
 
 # 2 Project
 ## Crypto copy trading system (SQL)
