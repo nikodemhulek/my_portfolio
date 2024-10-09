@@ -12,11 +12,11 @@ General questions
 
 Conduct a detailed analysis of the Northwind database based on the following points:
 1. Give the number of customers in the database. 
-a) check what the trend of the number of customers has been over the years
-b) give a list of customers who shopped in 1996 and 1997, but did not make a single order in 1998
-c) show the TOP 5 customers by revenue for each year and the total discount for the same customers also in the same period
-d) check whether the TOP5 customers also generated the highest number of orders
-e) check if there was seasonality in sales
+- check what the trend of the number of customers has been over the years
+- give a list of customers who shopped in 1996 and 1997, but did not make a single order in 1998
+- show the TOP 5 customers by revenue for each year and the total discount for the same customers also in the same period
+- check whether the TOP5 customers also generated the highest number of orders
+- check if there was seasonality in sales
 2. Analyze categories and products carefully
 a) show the products with the highest sales (TOP 10)
 b) show what % share each product had in the portfolios of TOP 5 customers												
