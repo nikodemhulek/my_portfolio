@@ -3,12 +3,101 @@
 # 1 Project
 ## Data Analysis for Industrial Company (SQL, PowerBI)
 1.In this project I did a sample data analysis for an industrial company. I had to answer questions and make visualizations based on this company's database. The project was created for learning purposes.
-General questions
+General questions:
 1. Has the amount of discounts given translated into increased revenue/products sold?
+```sql
+WITH SalesWithDiscount AS (
+    SELECT 
+    	SUM(od.quantity) AS total_quantity_sold,
+        SUM(od.unit_price * od.quantity * (1 - od.discount)) AS total_revenue_with_discount,
+        AVG(od.discount) AS avg_discount,
+        COUNT(o.order_id) AS total_orders_with_discount
+    FROM order_details od
+    LEFT JOIN orders o ON od.order_id = o.order_id
+    WHERE od.discount > 0
+),
+SalesWithoutDiscount AS (
+    SELECT 
+        SUM(od.quantity) AS total_quantity_sold,
+        SUM(od.unit_price * od.quantity) AS total_revenue_without_discount,
+        COUNT(o.order_id) AS total_orders_without_discount
+    FROM order_details od
+    LEFT JOIN orders o ON od.order_id = o.order_id
+    WHERE od.discount = 0
+)
+SELECT 
+    swd.total_quantity_sold AS quantity_with_discount,
+    swod.total_quantity_sold AS quantity_without_discount,
+    swd.total_revenue_with_discount AS revenue_with_discount,
+    swod.total_revenue_without_discount AS revenue_without_discount,
+    swd.total_orders_with_discount AS orders_with_discount,
+    swod.total_orders_without_discount AS orders_without_discount,
+    swd.avg_discount AS average_discount
+FROM SalesWithDiscount swd, SalesWithoutDiscount swod
+
 2. Does the region have an impact on revenue?
+```sql
+SELECT
+    r.region_description AS region,
+    COUNT(o.order_id) AS total_orders,
+    SUM(od.unit_price * od.quantity) AS total_revenue
+from orders o
+left join customers c ON o.customer_id = c.customer_id
+left join order_details od ON o.order_id = od.order_id
+left join employees e on o.employee_id = e.employee_id 
+left join employee_territories et on e.employee_id = et.employee_id 
+left join territories t on et.territory_id = t.territory_id 
+left join region r ON t.region_id = r.region_id
+GROUP by r.region_description
+ORDER by total_revenue desc
+
 3. Is seasonality in revenue if present the same for each region?
+```sql
+SELECT
+	r.region_description AS region,
+    date_part('month', o.order_date) AS month,
+    COUNT(o.order_id) AS total_orders,
+    SUM(od.quantity) AS total_quantity_sold,
+    round(SUM(od.unit_price * od.quantity)) AS total_revenue
+FROM orders o
+left join order_details od ON o.order_id = od.order_id
+left JOIN employees e ON o.employee_id = e.employee_id
+left join employee_territories et on e.employee_id = et.employee_id 
+left JOIN territories t ON et.territory_id = t.territory_id
+left JOIN region r ON t.region_id = r.region_id
+GROUP BY r.region_description, date_part('month', o.order_date)
+ORDER BY r.region_description, month
+
 4. Will a reduction in staff not affect the number of customers/orders served and ultimately sales?
-5. Does the gender of the employee matter in terms of number/value of orders?
+```sql
+with wskazniki as (
+    select 
+        e.employee_id,
+        COUNT(o.order_id) as liczba_zamowien,
+        SUM(od.quantity * od.unit_price) as wartosc_sprzedazy
+    from employees e
+ 	left join orders o on e.employee_id = o.employee_id
+    left join order_details od on o.order_id = od.order_id
+    group by e.employee_id
+),
+srednie_wartosci AS (
+    select 
+        AVG(liczba_zamowien) as srednia_zamowien,
+        AVG(wartosc_sprzedazy) as srednia_sprzedazy
+    from wskazniki
+)
+select 
+    e.employee_id,
+    CONCAT(e.first_name, ' ', e.last_name) as nazwa_pracownika,
+    w.liczba_zamowien,
+    round((select srednia_zamowien from srednie_wartosci)) as srednia_zamowien,
+    w.wartosc_sprzedazy,
+    round((select srednia_sprzedazy from srednie_wartosci)) as srednia_sprzedazy,
+    round(w.wartosc_sprzedazy / w.liczba_zamowien) as wartos_sprzedazy_na_zamowienie,
+	round((select srednia_sprzedazy from srednie_wartosci) / (select srednia_zamowien from srednie_wartosci)) as srednia_wartos_sprzedazy_na_zamowienie
+from  employees e
+left join wskazniki w on e.employee_id = w.employee_id
+order by wartos_sprzedazy_na_zamowienie desc
 
 Conduct a detailed analysis of the Northwind database based on the following points:
 1. Give the number of customers in the database. 
