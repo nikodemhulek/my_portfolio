@@ -103,20 +103,228 @@ left join wskazniki w on e.employee_id = w.employee_id
 order by wartos_sprzedazy_na_zamowienie desc
 ```
 
-Conduct a detailed analysis of the Northwind database based on the following points:
-1. Give the number of customers in the database. 
+1.Conduct a detailed analysis of the Northwind database based on the following points:
 - check what the trend of the number of customers has been over the years
+```sql
+select 
+	count(distinct c.customer_id) as custmers_number,
+	date_part('year', o.order_date) as "year"
+from customers c 
+left join orders o on c.customer_id = o.customer_id
+where date_part('year', o.order_date) is not null
+group by date_part('year', o.order_date)
+order by year
+```
 - give a list of customers who shopped in 1996 and 1997, but did not make a single order in 1998
+```sql
+with tbl1998 as (
+select
+	distinct o.customer_id as customers1998
+from orders o 
+where date_part('year', o.order_date) = 1998 
+group by o.customer_id 
+)
+select distinct o.customer_id
+from orders o 
+where date_part('year', o.order_date) in(1996, 1997)
+group by o.customer_id 
+having  count(distinct date_part('year', o.order_date)) = 2 --klienci ktorzy robili zakupy w tych 2 latach (2 warunki)
+and o.customer_id not in (select customers1998 from tbl1998)
+```
 - show the TOP 5 customers by revenue for each year and the total discount for the same customers also in the same period
+```sql
+with ranked_customers as (
+	select 
+		c.customer_id,
+		c.company_name,
+		date_part('year', o.order_date) as "year", 
+		round(sum(od.quantity*od.unit_price)) as income,
+		od.discount as total_discount,
+		row_number() over (partition by date_part('year', o.order_date) order by sum(od.quantity*od.unit_price*(1 - od.discount)) desc) as rank,
+		sum(od.quantity*od.unit_price*od.discount) as discount_amount
+	from customers c 
+	left join orders o on c.customer_id = o.customer_id
+	left join order_details od on o.order_id = od.order_id 
+	group by c.customer_id, c.company_name, date_part('year', o.order_date), od.discount
+	having sum(od.quantity*od.unit_price*(1 - od.discount)) is not null
+)
+select
+	rc.customer_id,
+	rc.company_name,
+	rc.year,
+	rc.income,
+	round(rc.discount_amount),
+	rc.total_discount
+from ranked_customers rc
+where rc.rank <= 5
+order by rc.year, rc.income desc
+```
 - check whether the TOP5 customers also generated the highest number of orders
-- check if there was seasonality in sales
+```sql
+-- TOP 5 INCOME 
+with ranked_customers_by_income as (
+	select 
+		c.customer_id,
+		c.company_name,
+		date_part('year', o.order_date) as "year", 
+		round(sum(od.quantity*od.unit_price)) as income,
+		round(sum(od.discount)) as total_discount,
+		row_number() over (partition by date_part('year', o.order_date) order by sum(od.quantity*od.unit_price*(1 - od.discount)) desc) as rank
+	from customers c 
+	left join orders o on c.customer_id = o.customer_id
+	left join order_details od on o.order_id = od.order_id 
+	group by c.customer_id, c.company_name, date_part('year', o.order_date)
+	having sum(od.quantity*od.unit_price*(1 - od.discount)) is not null
+)
+select rc.customer_id, rc.company_name, rc.year, rc.income, rc.total_discount
+from ranked_customers_by_income rc
+where rc.rank <= 5
+order by rc.year, rc.income desc
+
+--TOP 5 ORDER QUANTITY
+with ranked_customers_by_orders as (
+	select 
+		c.customer_id,
+		c.company_name,
+		date_part('year', o.order_date) as "year", 
+		count(o.order_id) as order_count,
+		round(sum(od.discount)) as total_discount,
+		row_number() over (partition by date_part('year', o.order_date) order by count(o.order_id) desc) as rank
+	from customers c 
+	left join orders o on c.customer_id = o.customer_id
+	left join order_details od on o.order_id = od.order_id 
+	group by c.customer_id, c.company_name, date_part('year', o.order_date)
+	having count(o.order_id) > 0 -- upewniam sie ze sa jakiekoliwek zamowienia
+)
+select ro.customer_id,
+	ro.company_name,
+	ro.year,
+	ro.order_count,
+	ro.total_discount
+from ranked_customers_by_orders ro
+where ro.rank <= 5
+order by ro.year, ro.order_count desc
+```
+Answear: 
+
 2. Analyze categories and products carefully
 - show the products with the highest sales (TOP 10)
-- show what % share each product had in the portfolios of TOP 5 customers												
+```sql
+select 
+	p.product_name, 
+	sum(od.quantity) as total_sales
+from products p
+left join order_details od on p.product_id = od.product_id 
+group by p.product_name 
+order by total_sales desc
+limit 10
+```
+- show what % share each product had in the portfolios of TOP 5 customers
+```sql
+with top5_customers as (
+	select 
+		c.customer_id, 
+		sum(od.quantity) total_sales
+	from customers c 
+	left join orders o on c.customer_id = o.customer_id
+	left join order_details od on o.order_id = od.order_id
+	where od.quantity is not null
+	group by c.customer_id
+	order by total_sales desc
+	limit 5
+),
+customer_product_share as (
+	select
+		p.product_name,
+		o.customer_id,
+		sum(od.quantity) as product_sales, 
+		sum(sum(od.quantity)) over(partition by o.customer_id) as customer_total_sales
+	from products p 
+	left join order_details od on p.product_id = od.product_id
+	left join orders o on od.order_id = o.order_id
+	group by p.product_name, o.customer_id
+)
+select 
+	cps.product_name,
+	cps.customer_id,
+	(round(cps.product_sales * 100 / cps.customer_total_sales)) as product_share_percentage
+from customer_product_share cps
+order by cps.customer_id, product_share_percentage desc
+```       				
 - check whether there was seasonality in product sales -- if so, which products and when sales were highest and when lowest
+```sql
+select
+	p.product_name,
+	date_part('month', o.order_date) as sale_month,
+	sum(od.quantity) as total_quantity 
+from order_details od 
+left join orders o on od.order_id = o.order_id 
+left join products p on od.product_id = p.product_id 
+group by p.product_name, sale_month
+order by 
+	p.product_name,
+	sale_month
+```
+Answear:
+
 - show statistics of discounts on individual products
+```sql
+select 
+	p.product_name,
+	count(od.discount) as total_discount,
+	avg(od.discount) as avg_discount,
+	min(od.discount) as min_dscount,
+	max(od.discount) as max_discount
+from products p 
+left join order_details od on p.product_id = od.product_id 
+where od.discount > 0 -- tylko produkty na ktorych sotsowano rabat
+group by p.product_name 
+order by avg_discount desc
+```
 - check whether the products with the highest income were also the most sold products
+```sql
+with revenue as( 
+	select 
+		p.product_name,
+		round(sum(od.quantity*od.unit_price)) as total_revenue
+	from order_details od 
+	left join products p on od.product_id = p.product_id 
+	group by p.product_name 
+	order by total_revenue desc
+	limit 10
+), --najczesciej sprzedawane produkty
+quantity as (
+	select 
+		p.product_name,
+	sum(od.quantity) as total_quantity
+	from order_details od 
+	left join products p on od.product_id = p.product_id 
+	group by p.product_name 
+	order by total_quantity desc
+	limit 10
+)
+select 
+	r.product_name as revenue_product,
+	r.total_revenue,
+	q.product_name as quantity_produt,
+	q.total_quantity
+from revenue r
+left join quantity q on r.product_name = q.product_name
+```
+Answear:
+
 - check the distribution of product sales by country
+```sql
+select 
+	o.ship_country,
+	p.product_name,
+	sum(od.quantity) as total_quantity 
+from order_details od
+left join orders o on od.order_id = o.order_id 
+left join products p on od.product_id = p.product_id 
+group by o.ship_country, p.product_name 
+order by o.ship_country, total_quantity desc
+```
 3. Analyze employee statistics in detail
 - show the size of the customer portfolio for each employee (revenue generated, number of orders, quantity sold)
 - check the share of products in each employee's sales. Check whether employees have engaged more strongly based on their performance in selling specific products		
