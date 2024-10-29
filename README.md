@@ -161,7 +161,7 @@ order by rc.year, rc.income desc
 ```
 - check whether the TOP5 customers also generated the highest number of orders
 ```sql
--- TOP 5 INCOME 
+TOP 5 INCOME 
 with ranked_customers_by_income as (
 	select 
 		c.customer_id,
@@ -181,7 +181,7 @@ from ranked_customers_by_income rc
 where rc.rank <= 5
 order by rc.year, rc.income desc
 
---TOP 5 ORDER QUANTITY
+TOP 5 ORDER QUANTITY
 with ranked_customers_by_orders as (
 	select 
 		c.customer_id,
