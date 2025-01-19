@@ -170,7 +170,8 @@ with ranked_customers_by_income as (
 		date_part('year', o.order_date) as "year", 
 		round(sum(od.quantity*od.unit_price)) as income,
 		round(sum(od.discount)) as total_discount,
-		row_number() over (partition by date_part('year', o.order_date) order by sum(od.quantity*od.unit_price*(1 - od.discount)) desc) as rank
+		row_number() over (partition by date_part('year', o.order_date),
+  		order by sum(od.quantity*od.unit_price*(1 - od.discount)) desc) as rank
 	from customers c 
 	left join orders o on c.customer_id = o.customer_id
 	left join order_details od on o.order_id = od.order_id 
