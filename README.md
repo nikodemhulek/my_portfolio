@@ -327,18 +327,163 @@ order by o.ship_country, total_quantity desc
 ```
 3. Analyze employee statistics in detail
 - show the size of the customer portfolio for each employee (revenue generated, number of orders, quantity sold)
-- check the share of products in each employee's sales. Check whether employees have engaged more strongly based on their performance in selling specific products		
+```sql
+select
+	e.employee_id,
+	concat(e.first_name,' ', e.last_name),
+	count(o.order_id) as total_orders,
+	sum(od.quantity) as total_quantity_sold,
+	round(sum(od.unit_price*od.quantity)) as total_revenue_generated
+from employees e 
+left join orders o on e.employee_id = o.employee_id 
+left join order_details od on o.order_id = od.order_id 
+group by e.employee_id, concat(e.first_name,' ', e.last_name)
+order by total_revenue_generated desc
+```
+- check the share of products in each employee's sales. Check whether employees have engaged more strongly based on their performance in selling specific products
+```sql
+with employee_sales as (
+	select 
+		e.employee_id,
+		concat(e.first_name,' ', e.last_name) as name,
+		p.product_name,
+		sum(od.quantity) as total_quantity_sold,
+		sum(od.unit_price*od.quantity) as total_revenue_genereted
+	from employees e 
+	left join orders o on e.employee_id = o.employee_id
+	left join order_details od on o.order_id = od.order_id
+	left join products p on od.product_id = p.product_id
+	group by
+		e.employee_id,
+		concat(e.first_name,' ', e.last_name),
+		p.product_name
+```  
 - check which carriers each employee worked with most often
+```sql
+select 
+	employee_id,
+	name,
+	product_name,
+	total_quantity_sold,
+	round(total_revenue_genereted),
+	round((total_quantity_sold / sum(total_quantity_sold) over (partition by employee_id)) * 100, 2) as product_sales_share_percentage
+from employee_sales
+order by employee_id, product_sales_share_percentage desc
+```
 - come up with and calculate two KPIs that will give a good picture of employee performance
-- outline which manager has the best team in terms of revenue and volume of specific products sold
+```sql
+select
+	e.employee_id,
+	concat(e.first_name,' ', e.last_name) as employee_name,
+	count(o.order_id) as total_orders,
+	sum(od.quantity) as total_quantity_sold,
+	round(sum(od.unit_price*od.quantity)) as total_revenue_generated,
+	round(sum(od.unit_price*od.quantity) / count(o.order_id)) as average_order_value,
+	round(sum(od.quantity) / count(o.order_id), 2) as average_items_per_order
+from employees e 
+LEFT JOIN orders o on e.employee_id = o.employee_id 
+LEFT JOIN order_details od on o.order_id = od.order_id 
+GROUP BY e.employee_id, employee_name
+ORDER BY total_revenue_generated desc
+```
+
 4. Analyze the carriers in detail
 - which carrier handled the most orders
+```sql
+SELECT 
+    s.shipper_id, 
+    s.company_name, 
+    COUNT(o.order_id) AS total_orders
+FROM 
+    shippers s
+LEFT JOIN 
+    orders o ON s.shipper_id = o.ship_via
+GROUP BY 
+    s.shipper_id, s.company_name
+ORDER BY 
+    total_orders desc
+```
 - which carrier transported the highest number of products
+```sql
+SELECT 
+	s.shipper_id, 
+    s.company_name, 
+    SUM(od.quantity) AS total_products_shipped
+FROM 
+    shippers s
+LEFT JOIN 
+    orders o ON s.shipper_id = o.ship_via
+LEFT JOIN 
+    order_details od ON o.order_id = od.order_id
+GROUP BY 
+    s.shipper_id, s.company_name
+ORDER BY 
+    total_products_shipped desc
+```
 - total freight per carrier
+```sql
+SELECT 
+    s.shipper_id, 
+    s.company_name, 
+    SUM(o.freight) AS total_freight
+FROM 
+    shippers s
+JOIN 
+    orders o ON s.shipper_id = o.ship_via
+GROUP BY 
+    s.shipper_id, s.company_name
+ORDER by
+	total_freight desc
+```
 5. Analyze the suppliers
 - show the suppliers who delivered the largest number of products to us
+```sql
+select 
+    s.company_name, 
+    SUM(od.quantity) AS total_quantity_delivered
+from suppliers s
+left join  products p ON s.supplier_id = p.supplier_id
+left   join order_details od ON p.product_id = od.product_id
+group by s.company_name 
+order by total_quantity_delivered DESC
+```
 - check the distribution of suppliers by region (how many in each region)
+```sql
+select 
+	s.region,
+	count(s.supplier_id) as total_suppliers
+from suppliers s 
+where s.region is not null
+group by s.region
+```
 - check which region the suppliers who provide the most expensive and cheapest product come from
+```sql
+with  the_cheapest as (
+	select 
+		s.region,
+		s.company_name,
+		p.product_name,
+		p.unit_price
+	from products p 
+	left join suppliers s on p.supplier_id = s.supplier_id
+	where p.unit_price = (select min(unit_price) from products)
+), 
+the_most_expensive as (
+	select 
+		s.region,
+		s.company_name,
+		p.product_name,
+		p.unit_price
+	from products p 
+	left join suppliers s on p.supplier_id = s.supplier_id
+	where  p.unit_price = (select max(unit_price) from products)
+)
+select *
+from the_cheapest
+union all
+select *
+from the_most_expensive
+```
 
 # 2 Project
 ## Crypto copy trading system (SQL)
